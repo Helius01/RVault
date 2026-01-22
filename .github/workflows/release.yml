@@ -15,20 +15,18 @@ jobs:
         include:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
-            archive: tar.gz
-
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            archive: zip
 
           - os: macos-latest
             target: x86_64-apple-darwin
-            archive: tar.gz
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -38,23 +36,42 @@ jobs:
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package
+      # -------------------------
+      # Package (Linux / macOS)
+      # -------------------------
+      - name: Package (Linux / macOS)
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
           BIN=vault
           VERSION=${GITHUB_REF_NAME}
-          DIR=${BIN}-${VERSION}-${{ matrix.target }}
+          TARGET=${{ matrix.target }}
+          DIR=${BIN}-${VERSION}-${TARGET}
 
           mkdir $DIR
+          cp target/$TARGET/release/$BIN $DIR/
+          tar -czf $DIR.tar.gz $DIR
 
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cp target/${{ matrix.target }}/release/${BIN}.exe $DIR/
-            zip -r $DIR.zip $DIR
-          else
-            cp target/${{ matrix.target }}/release/${BIN} $DIR/
-            tar -czf $DIR.tar.gz $DIR
-          fi
+      # -------------------------
+      # Package (Windows)
+      # -------------------------
+      - name: Package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $BIN = "vault"
+          $VERSION = "${{ github.ref_name }}"
+          $TARGET = "${{ matrix.target }}"
+          $DIR = "$BIN-$VERSION-$TARGET"
 
+          New-Item -ItemType Directory $DIR | Out-Null
+          Copy-Item "target/$TARGET/release/$BIN.exe" "$DIR\"
+
+          Compress-Archive -Path $DIR -DestinationPath "$DIR.zip"
+
+      # -------------------------
+      # Upload to GitHub Release
+      # -------------------------
       - name: Upload Release Assets
         uses: softprops/action-gh-release@v2
         with:
