@@ -5,6 +5,7 @@ pub fn load(password_prompt: &str) -> Result<(VaultData, Vec<u8>, Vec<u8>), Stri
     let path = storage::vault_path()?;
     let raw = storage::read_all(&path)?;
     let vf = format::decode(&raw)?;
+    let _ = vf.version;
 
     let password = ui::prompt_password(password_prompt)?;
     let plaintext = crypto::decrypt(&password, &vf.salt, &vf.nonce, &vf.ciphertext)?;

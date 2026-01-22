@@ -25,14 +25,13 @@ pub fn derive_key(password: &str, salt: &[u8]) -> Result<DerivedKey, String> {
         .hash_password_into(password.as_bytes(), salt, &mut key_bytes)
         .map_err(|e| e.to_string())?;
 
-    Ok(DerivedKey {
-        key: Key::from_slice(&key_bytes).clone(),
-    })
+    let key = *Key::from_slice(&key_bytes);
+    Ok(DerivedKey { key })
 }
-
+type EncryptResult = Result<(Vec<u8>, Vec<u8>, Vec<u8>), String>;
 /// Encrypts plaintext using password.
 /// Returns (salt16, nonce24, ciphertext)
-pub fn encrypt(password: &str, plaintext: &[u8]) -> Result<(Vec<u8>, Vec<u8>, Vec<u8>), String> {
+pub fn encrypt(password: &str, plaintext: &[u8]) -> EncryptResult {
     let mut salt = [0u8; 16];
     OsRng.fill_bytes(&mut salt);
 
