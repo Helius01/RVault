@@ -38,7 +38,7 @@ jobs:
       - name: Package
         shell: bash
         run: |
-          BIN=rvault
+          BIN=vault
           VERSION=${GITHUB_REF_NAME}
           DIR=${BIN}-${VERSION}-${{ matrix.target }}
           mkdir $DIR
