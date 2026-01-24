@@ -36,10 +36,7 @@ fn run(cmd: Command) -> Result<(), String> {
         Command::Add { key } => cmd_add(key),
         Command::Get { key } => cmd_get(key),
         Command::Remove { key } => cmd_remove(key),
-        Command::ChangePassword => {
-            println!("(next milestone) change-password");
-            Ok(())
-        }
+        Command::ChangePassword => cmd_change_password(),
     }
 }
 
@@ -123,5 +120,24 @@ fn cmd_init() -> Result<(), String> {
     storage::write_atomic(&path, &bytes)?;
     println!("Vault initialized at {:?}", path);
 
+    Ok(())
+}
+
+fn cmd_change_password() -> Result<(), String> {
+    let (data, _, _) = vault::load("Current vault password: ")?;
+
+    let pw1 = ui::prompt_password("Set new vault password: ")?;
+    let pw2 = ui::prompt_password("Confirm password: ")?;
+
+    if pw1 != pw2 {
+        return Err("Passwords do not match".into());
+    }
+    if pw1.len() < 10 {
+        eprintln!("Warning: consider using 10+ characters.");
+    }
+
+    vault::save(&pw1, &data)?;
+
+    println!("Vault password updated.");
     Ok(())
 }

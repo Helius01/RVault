@@ -50,7 +50,7 @@ fn help_text() -> String {
         "  vault get <key>",
         "  vault list",
         "  vault remove <key>",
-        "  vault change-password",
+        "  vault change-password  (prompts for current and new password)",
     ]
     .join("\n")
 }
